@@ -1,7 +1,7 @@
 """
-llm.py — talks to Groq. Nothing else in the project should import `groq`
-directly; everything else just calls LLMClient.call(...) and gets back
-plain Python objects.
+    llm.py — talks to Groq. Nothing else in the project should import `groq`
+    directly; everything else just calls LLMClient.call(...) and gets back
+    plain Python objects.
 """
 
 import json
@@ -9,7 +9,9 @@ import os
 import time
 from dataclasses import dataclass, field
 from groq import Groq
+from dotenv import load_dotenv
 
+load_dotenv()
 
 """
     Validation - Structuring the Tool call Retrurns and LLM 
@@ -46,11 +48,13 @@ class LLMResponse:
     token usage from the model.
 
 """
+GROQ_API = os.environ["GROQ_API_KEY"]
+
 
 class LLMClient:
-    def __init__(self, model: str):
-        self.model = model
-        self.client = Groq(api_key=os.environ["GROQ_API_KEY"])
+    def __init__(self):
+        self.model = "openai/gpt-oss-20b"
+        self.client = Groq(api_key = GROQ_API)
 
     def call(self, messages: list[dict], tools: list[dict] | None = None , max_retries = 3) -> LLMResponse:
         for attempt in range(max_retries):

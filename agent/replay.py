@@ -1,7 +1,7 @@
 """
 
-    Replayiong Just opening the file(logger.jsonl)
-    for ezxplictly seeing the looger file 
+    Replaying -> Just opening the file(logger.jsonl)
+    for explictly seeing the looger file. 
 
 """
 import json
@@ -14,4 +14,4 @@ def replay(run_id):
             print(json.dumps(event, indent=2))
             print("-" * 40)
 
-replay("run1")
+replay("logger")

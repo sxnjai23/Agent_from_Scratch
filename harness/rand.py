@@ -1,14 +1,69 @@
-def sanji(func):
-    def wrapper():
-        print("Before function")
-        func()
-        print("After function")
+import inspect
+from fastapi import FastAPI
+app = FastAPI()
+
+"""
+
+#Higher Order Functions :
+
+def hii():
+    print("gretting da Boiii")
+def wid_name(func):
+    print(f"grettings da bois")
+    func()
+
+#DECORATOR
+def sanji(func): #--> hello
+    def wrapper(name , lastname): #-> hello
+        print(f"Before function changed by the @decorator -> sanji ")
+        func(name , lastname)
+        s= name+lastname
+        print(s)
+        print("After function changed by the @decorator")
 
     return wrapper
 
 
 @sanji
-def hello():
-    print("Hello!", 3+2+4*11%2/1-10000000)
+def hello(name , lastname):
+    print(f"Hello {name} , {lastname}!")
 
-hello()
+hello("sanjai","jayabal")
+
+"""
+#---------------------------------------------------------------------------------------------
+
+def hello(name , lastname):
+    print(f"Hello {name} , {lastname}!")
+
+
+sig = inspect.signature(hello)
+sig2 = sig.parameters.items()
+print(sig2)
+
+for name, param in sig.parameters.items():
+    print(name ,param)
+
+hello.schema= {
+    "type":"function",
+    "name":hello.__name__,
+    "parameters":sig
+}
+
+print(hasattr(hello , "schema"))
+
+
+# numbers = [1, 2, 3]
+
+# result = map(lambda x: x * 2, numbers)
+
+# print(result)
+
+
+# @app.get("/users")
+# def get_users():
+#     return {"users": ["John", "Sam"]}
+
+# @app.post("/users")
+# def create_user(name: str):
+#     return {"message": f"User {name} created"}
