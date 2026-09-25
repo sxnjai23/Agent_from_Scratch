@@ -7,6 +7,8 @@ import inspect
 import json
 import os
 import requests
+from harness.sandbox import run_python_code as _run_python_code
+
 
 TOOLS = {}  # name -> function, with .schema attached
 
@@ -85,6 +87,11 @@ def get_weather(city: str) -> str:
     response.raise_for_status()
     data = response.json()
     return f"{city}: {data['weather'][0]['description']}, {data['main']['temp']}°C"
+
+@tool
+def run_python_code(code: str) -> str:
+    """Run Python code in an isolated, network-disabled sandbox and return its output."""
+    return _run_python_code(code)
 
 
 # if __name__ == "__main__":

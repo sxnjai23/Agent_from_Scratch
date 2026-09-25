@@ -1,0 +1,15 @@
+[
+  {
+    "role": "system",
+    "content": "You are a helpful agent. Use tools when needed."
+  },
+  {
+    "role": "user",
+    "content": "What's 100 divided by 0?"
+  },
+  {
+    "role": "assistant",
+    "content": "Division by zero is undefined in mathematics.  \nSo \\(100 \\div 0\\) has no defined numeric value (it\u2019s considered \u201cundefined\u201d or \u201cinfinite\u201d depending on the context).",
+    "tool_calls": []
+  }
+]

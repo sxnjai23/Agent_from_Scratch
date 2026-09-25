@@ -59,7 +59,7 @@ class LLMClient:
     def call(self, messages: list[dict], tools: list[dict] | None = None , max_retries = 3) -> LLMResponse:
         for attempt in range(max_retries):
             try:
-                kwargs = {"model": self.model, "messages": messages, "max_tokens": 512}
+                kwargs = {"model": self.model, "messages": messages, "max_tokens": 256}
                 if tools:
                     kwargs["tools"] = tools
                     kwargs["tool_choice"] = "auto"

@@ -5,6 +5,7 @@
 
 from .llm import LLMClient
 from .tools import get_all_schemas, execute
+from .context import load_session, save_session, maybe_summarize
 from harness.tracing import Tracer
 import json
 
@@ -16,12 +17,20 @@ import json
 """
 
 
-def run_agent(task, llm, max_steps=10, run_id="logger"):
+def run_agent(task, llm, max_steps=10,session_id = "test-01", run_id="logger"):
     tracer = Tracer(run_id)
-    messages = [
-        {"role": "system", "content": "You are a helpful agent. Use tools when needed."},
-        {"role": "user", "content": task},
-    ]
+    messages = load_session(session_id)
+    if messages is None:
+        messages = [
+            {"role": "system", "content": "You are a helpful agent. Use tools when needed."},
+]
+        tracer.log(f"New session: {run_id}")
+    else:
+        messages = maybe_summarize(messages, llm)
+        tracer.log(f"Resumed session: {run_id} ({len(messages)} messages so far)")
+
+    # the new task is just another user message added onto the history
+    messages.append({"role": "user", "content": task})
 
     #Get all the Schemas from tools list
     schemas = get_all_schemas()
@@ -33,7 +42,7 @@ def run_agent(task, llm, max_steps=10, run_id="logger"):
     
     #IN DEPTH : tc= tool_call id's, name ,arguments.
         
-        tc.id = the function id--> address stored in ram
+        tc.id = A unique string LLM assigns to this specific tool call, used to match this result back to that exact request
         tc.name = the name of the function.
         arguments = get the argument for our functions.
 
@@ -52,13 +61,14 @@ def run_agent(task, llm, max_steps=10, run_id="logger"):
                     "type": "function",
                     "function": {"name": tc.name, "arguments": json.dumps(tc.arguments)},
                 }
-                for tc in response.tool_calls
-            ] if response.tool_calls else None,
+                for tc in response.tool_calls]
+            # ] if response.tool_calls else None,
         }
         
         messages.append(assistant_msg)
 
         if not response.tool_calls:
+            save_session(session_id, messages)
             tracer.log(f"Done: {response.content}")
             tracer.close()
             return response.content
@@ -73,12 +83,19 @@ def run_agent(task, llm, max_steps=10, run_id="logger"):
                 "content": result,
             })
 
+        save_session(session_id, messages)
+
     tracer.log(f"Stopped: max steps ({max_steps}) reached")
+    save_session(session_id, messages)
     tracer.close()
     return "Stopped: max steps reached"
 
 
 if __name__ == "__main__":
     llm = LLMClient()
-    answer = run_agent(task="before this message what is asked ?", llm=llm)
-    print(answer)
+    while True:
+        task = input(":")
+        if task.lower() == "exit":
+            break
+        answer = run_agent(task=task, llm=llm, session_id = "test-01", max_steps=10, run_id="logger")
+        print(answer)

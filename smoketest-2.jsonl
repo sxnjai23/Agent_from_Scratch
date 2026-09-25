@@ -1,0 +1,3 @@
+"New session: smoketest-2"
+"run_python_code({'code': 'def fib(n):\\n    a,b=0,1\\n    for _ in range(n):\\n        a,b=b,a+b\\n    return a\\nprint(fib(20))'}) -> 6765"
+"Done: The 20th Fibonacci number is **6765**."
