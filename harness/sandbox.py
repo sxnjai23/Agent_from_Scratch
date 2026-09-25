@@ -65,13 +65,13 @@ def run_python_code(code: str, timeout_seconds: int = 5) -> str:
         container.remove(force=True)
 
 
-if __name__ == "__main__":
-    # quick manual tests — run this file directly to check the sandbox works
-    print("Normal code:")
-    print(run_python_code("print(1 + 1)"))
+# if __name__ == "__main__":
+#     # quick manual tests — run this file directly to check the sandbox works
+#     print("Normal code:")
+#     print(run_python_code("print(1 + 1)"))
 
-    print("\nCode that crashes:")
-    print(run_python_code("1 / 0"))
+#     print("\nCode that crashes:")
+#     print(run_python_code("1 / 0"))
 
-    print("\nCode that hangs (should time out):")
-    print(run_python_code("while True: pass", timeout_seconds=3))
+#     print("\nCode that hangs (should time out):")
+#     print(run_python_code("while True: pass", timeout_seconds=3))

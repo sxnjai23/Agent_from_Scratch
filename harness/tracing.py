@@ -1,3 +1,10 @@
+"""
+Tracing.py -> used to trace the agent and log the messages in a file. 
+It creates a new file for each run and logs the messages in JSONL format.
+
+"""
+
+
 import json
 
 
