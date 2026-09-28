@@ -1,0 +1,74 @@
+[
+  {
+    "answer": "15\u202f\u00d7\u202f7 equals **105**.",
+    "steps": 2,
+    "tokens": 586,
+    "status": "done",
+    "id": "math-1",
+    "passed": true
+  },
+  {
+    "answer": "250\u202f\u2212\u202f75\u202f=\u202f175.",
+    "steps": 1,
+    "tokens": 260,
+    "status": "done",
+    "id": "math-2",
+    "passed": true
+  },
+  {
+    "answer": "81 divided by 9 equals **9**.",
+    "steps": 2,
+    "tokens": 611,
+    "status": "done",
+    "id": "math-3",
+    "passed": true
+  },
+  {
+    "answer": "The 20th Fibonacci number is **6765**.",
+    "steps": 2,
+    "tokens": 683,
+    "status": "done",
+    "id": "code-1",
+    "passed": true
+  },
+  {
+    "answer": "720",
+    "steps": 2,
+    "tokens": 593,
+    "status": "done",
+    "id": "code-2",
+    "passed": true
+  },
+  {
+    "answer": "The sum of all numbers from\u202f1\u202fto\u202f100 is **5050**.",
+    "steps": 2,
+    "tokens": 727,
+    "status": "done",
+    "id": "code-3",
+    "passed": true
+  },
+  {
+    "answer": "144 + 6 = **150**",
+    "steps": 2,
+    "tokens": 615,
+    "status": "done",
+    "id": "multi-1",
+    "passed": true
+  },
+  {
+    "answer": "**Chennai Weather (as of now):**  \n- **Condition:** Overcast clouds  \n- **Temperature:** 34.8\u202f\u00b0C (\u224894\u202f\u00b0F)  \n\nFeel free to let me know if you'd like a forecast or additional details!",
+    "steps": 2,
+    "tokens": 582,
+    "status": "done",
+    "id": "weather-1",
+    "passed": true
+  },
+  {
+    "answer": "Dividing by zero is undefined in ordinary arithmetic.  \nSo \\(100 \\div 0\\) doesn\u2019t have a numerical value\u2014you can\u2019t compute it.",
+    "steps": 1,
+    "tokens": 305,
+    "status": "done",
+    "id": "fail-1",
+    "passed": true
+  }
+]

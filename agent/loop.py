@@ -49,8 +49,13 @@ def run_agent(task, llm, max_steps=10,session_id = "test-01", run_id="logger"):
     """
     
 
+    total_tokens = 0
+
     for step in range(max_steps):
         response = llm.call(messages, tools=schemas)
+
+        total_tokens = total_tokens + response.usage.get("input_tokens", 0) + response.usage.get("output_tokens", 0)
+        
 
         assistant_msg = {
             "role": "assistant",
@@ -64,6 +69,7 @@ def run_agent(task, llm, max_steps=10,session_id = "test-01", run_id="logger"):
                 for tc in response.tool_calls]
             # ] if response.tool_calls else None,
         }
+
         
         messages.append(assistant_msg)
 
@@ -71,7 +77,9 @@ def run_agent(task, llm, max_steps=10,session_id = "test-01", run_id="logger"):
             save_session(session_id, messages)
             tracer.log(f"Done: {response.content}")
             tracer.close()
-            return response.content
+             # NEW: return a dict instead of a plain string
+            return {"answer": response.content, "steps": step + 1,
+                    "tokens": total_tokens, "status": "done"}
 
         for tc in response.tool_calls:
             result = execute(tc.name, tc.arguments)
@@ -97,5 +105,5 @@ if __name__ == "__main__":
         task = input(":")
         if task.lower() == "exit":
             break
-        answer = run_agent(task=task, llm=llm, session_id = "test-01", max_steps=10, run_id="logger")
-        print(answer)
+        result = run_agent(task=task, llm=llm, session_id = "test-01", max_steps=10, run_id="logger")
+        print(result["answer"])

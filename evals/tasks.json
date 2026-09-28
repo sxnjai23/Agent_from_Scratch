@@ -1,0 +1,12 @@
+[
+  {"id": "math-1",  "prompt": "What is 15 times 7?",                        "expected": "105"},
+  {"id": "math-2",  "prompt": "What is 250 minus 75?",                      "expected": "175"},
+  {"id": "math-3",  "prompt": "What is 81 divided by 9?",                   "expected": "9"},
+  {"id": "code-1",  "prompt": "Use code to find the 20th Fibonacci number", "expected": "6765"},
+  {"id": "code-2",  "prompt": "Use code to calculate 6 factorial",          "expected": "720"},
+  {"id": "code-3",  "prompt": "Use code to add up all numbers from 1 to 100", "expected": "5050"},
+  {"id": "multi-1", "prompt": "Multiply 12 by 12, then add 6 to the result", "expected": "150"},
+  {"id": "weather-1", "prompt": "What's the weather in Chennai?",           "expected": "chennai"},
+  {"id": "fail-1",  "prompt": "What is 100 divided by 0?",                  "expected": "zero"},
+  {"id": "weather-fail",  "prompt": "What is the weather in dfsdgdsfsdf?",     "expected": "error"}
+]
