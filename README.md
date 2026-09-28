@@ -1,12 +1,91 @@
-# Agent from Scratch
+# Agent & Harness from Scratch
 
-**Build an AI agent in plain Python. No LangChain, no LangGraph, no magic. Just a loop, an LLM API, and a few small files you can read in an evening.**
+### Build an AI agent, then the harness that keeps it in line
+
+**Build an AI agent in plain Python, then build the harness around it that makes it safe, observable and testable. No LangChain, no LangGraph, no magic. Just a loop, an LLM API, and a few small files you can read in an evening.**
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
+
+**Built by [Sanjii](https://github.com/sxnjai23)** · [LinkedIn](https://in.linkedin.com/in/sanjai-jayabal)
+
+
+[What is an agent?](#what-is-an-agent-what-is-a-harness) · [Run it](#run-it-in-5-minutes) · [The harness](#the-harness) · [Learn it step by step](#learn-it-step-by-step) · [The sandbox](#the-sandbox-in-depth) · [Evals](#part-7-testing-it-properly) · [Credits](#credits)
 
 Most agent tutorials start with a framework. That gets you a demo fast, but you come away knowing the framework, not the agent. This repo does it the other way around: you build every piece yourself, see why it exists, and then the frameworks stop looking mysterious.
 
 If you can read basic Python (functions, dicts, classes, `try/except`), you can follow this. You don't need any AI background.
+
+---
+
+## What is an agent? What is a harness?
+
+You'll hear both words everywhere right now. Before any code, here's what they mean in plain terms.
+
+### What is an AI agent?
+
+A normal chatbot answers once: you ask, it replies, done. An **agent** is an AI model that can *do things* to get a job finished. It decides what to do next, uses tools (look something up, run code, call an API, read a file), checks what came back, and keeps going until the goal is met.
+
+Every agent has three ingredients:
+
+| Ingredient | What it is | In this repo |
+|---|---|---|
+| **A model** | the part that reasons and writes | an LLM hosted on Groq |
+| **Tools** | actions the model can ask for | weather lookup, math, running Python |
+| **A loop** | ask, act, look at the result, repeat until done | [`agent/loop.py`](agent/loop.py) |
+
+And here's how that differs from a chatbot:
+
+| | Chatbot | Agent |
+|---|---|---|
+| Steps | one question, one answer | as many steps as the goal needs |
+| Actions | none, only text | calls tools |
+| Who picks the next step | you | the model |
+| What can go wrong | a bad answer | a bad answer, a failed tool, a loop that never ends, a wrong action |
+
+Ask an agent *"What's the weather in Chennai, and what's that temperature times 3?"* and it works out for itself that this takes two steps.
+
+### What is a harness?
+
+> **Harness** = everything you build around the AI model that gives it capabilities, context, rules, state, execution mechanisms, and safeguards to accomplish a goal reliably.
+
+On its own, the model only turns text into text. It can't run a tool, remember yesterday's chat, or stop itself from looping forever. The harness does all of that.
+
+So yes, things like **tool definitions, function schemas, parsing, tool execution, prompts, context management, memory, validation, permissions, agent loops, error handling, and observability** can all be parts of the harness.
+
+A simple way to hold it in your head:
+
+> **Agent = model + harness.** The model brings the intelligence. The harness brings everything else.
+
+| The model gives you | The harness gives you |
+|---|---|
+| language and reasoning | tools it can actually use |
+| a guess at the next step | a loop that carries the steps out |
+| answers from what's in its prompt | context, memory and saved state |
+| | rules, permissions and safety limits |
+| | error handling, retries and logs |
+
+### What is harness engineering?
+
+This is why "harness engineering" has become a useful term. You're not just trying to make the LLM smarter. **You're engineering the environment that lets the LLM perform useful work reliably.**
+
+It's a real skill, because the same model can look brilliant or useless depending on what's around it. Harness engineers decide which tools the model sees, how its context is trimmed, what happens when a tool fails, what it's allowed to do, and how you measure whether any of it is working.
+
+### Where each harness part lives in this repo
+
+| Harness part | Where you'll find it |
+|---|---|
+| Tool definitions and function schemas | the `@tool` decorator in [`agent/tools.py`](agent/tools.py) |
+| Parsing | [`agent/llm.py`](agent/llm.py) turns the model's reply into plain Python objects |
+| Tool execution | `execute()` in [`agent/tools.py`](agent/tools.py) |
+| Prompts | the system message in [`agent/loop.py`](agent/loop.py) |
+| Context management | summarizing long chats in [`agent/context.py`](agent/context.py) |
+| Memory and state | saved sessions in [`agent/context.py`](agent/context.py) |
+| Validation and error handling | `execute()` catches bad arguments and crashing tools, and [`agent/llm.py`](agent/llm.py) retries failed API calls |
+| Permissions | the tool allowlist, plus the Docker sandbox's limits in [`harness/sandbox.py`](harness/sandbox.py) |
+| The agent loop | [`agent/loop.py`](agent/loop.py) |
+| Observability | logs in [`harness/tracing.py`](harness/tracing.py), run stats, and the evals in [`evals/`](evals/) |
+
+You'll build the agent first, then the harness around it. The full harness breakdown is in [The harness](#the-harness).
 
 ---
 
@@ -40,6 +119,8 @@ And the part most tutorials skip, the **harness** that makes an agent trustworth
 - **A Docker sandbox**, so model-written code can't touch your machine
 - **An eval suite**, so you can measure whether a change helped or hurt
 
+> **Spotlight: the sandbox.** When the model writes code, that code never touches your machine. It runs inside a throwaway Docker container with no internet, a memory cap and a timer, and the container is destroyed right after. It's the piece that makes "let the AI run code" safe enough to try, and it has its own section: [how the sandbox works](#the-sandbox-in-depth).
+
 ---
 
 ## The idea in five minutes
@@ -70,7 +151,99 @@ flowchart TD
 Two things to hold onto:
 
 - **The model never runs anything. It can only ask.** Your code decides what actually runs. That's why there's a safe `execute()` function, and a sandbox for code the model writes.
-- **The agent is the loop. The harness is everything around it** that keeps it reliable: retries, limits, logs, memory, sandbox, evals. Both are in this repo.
+- **The agent is the loop. The harness is everything around it** that keeps it reliable: retries, limits, logs, memory, sandbox, evals. Both are in this repo, and [the next section](#the-harness) shows how they fit together.
+
+---
+
+## The harness
+
+A bare agent loop is easy to write and hard to trust. It works in the demo, then a tool throws an error, the API times out, the model loops forever, or a conversation grows until it breaks. **The harness is everything you build around the loop so those things don't matter.**
+
+A rough way to picture it: the agent is the driver, and the harness is the seatbelt, the dashboard, the speed limiter and the crash test lab. The driver doesn't change. What changes is whether you'd let it out on the road.
+
+### The harness at a glance
+
+| Piece | What goes wrong without it | What it does here | Where |
+|---|---|---|---|
+| Retries with backoff | one rate limit or network blip ends the run | waits, then tries the API call again a few times | [`agent/llm.py`](agent/llm.py) |
+| Safe tool execution | one failing tool crashes the whole agent | catches every error and returns it as text the model can react to | [`agent/tools.py`](agent/tools.py) |
+| Tool allowlist | the model calls something you never meant to expose | only functions marked `@tool` can ever run | [`agent/tools.py`](agent/tools.py) |
+| Step limit | a confused model loops forever and burns money | stops after `max_steps` and reports why | [`agent/loop.py`](agent/loop.py) |
+| Run stats | you can't tell what a run cost | returns steps, tokens and status for every run | [`agent/loop.py`](agent/loop.py) |
+| Tracing | "it didn't work" with no way to find out why | writes a readable log line for every action | [`harness/tracing.py`](harness/tracing.py) |
+| Session memory | the agent forgets everything between runs | saves and reloads the conversation | [`agent/context.py`](agent/context.py) |
+| Summarization | long chats get slow, costly, then impossible | replaces old messages with a short summary | [`agent/context.py`](agent/context.py) |
+| Docker sandbox | model-written code runs on your machine | runs it in a locked-down, disposable container | [`harness/sandbox.py`](harness/sandbox.py) |
+| Evals | you change something and have no idea if it helped | runs test tasks, grades them, prints a score | [`evals/`](evals/) |
+
+Not every harness piece lives in the `harness/` folder. That folder holds tracing and the sandbox. The others sit next to the code they protect. "Harness" describes the job, not the folder.
+
+### How the harness plugs into the agent
+
+The harness doesn't wrap the agent from the outside. It hooks in at specific points in the loop. Here's every hook, in the order things happen:
+
+```mermaid
+flowchart TD
+    subgraph BEFORE["Before the loop starts"]
+        B1["Open the log file (tracing.py)"] --> B2["Load the saved session (context.py)"] --> B3["Summarize if it got long (context.py)"]
+    end
+    B3 --> L1
+    subgraph LOOP["Every step of the loop"]
+        L1{"Steps left? (max_steps in loop.py)"}
+        L1 -- yes --> L2["Call the model, with retries (llm.py)"]
+        L2 --> L3["Count the tokens (loop.py)"]
+        L3 --> L4{"Did it ask for a tool?"}
+        L4 -- yes --> L5["execute: allowlist and error catching (tools.py)"]
+        L5 --> L6["Log the result and save the session"]
+        L6 --> L1
+        L5 -. "code tool only" .-> SB["Docker sandbox (sandbox.py)"]
+    end
+    L4 -- no --> E1
+    L1 -- no --> E1
+    E1["Return answer, steps, tokens and status"] --> E2["evals/run_evals.py scores many runs"]
+```
+
+The same thing as a table, so you can find any hook quickly:
+
+| Hook point | What's attached there | Where to look |
+|---|---|---|
+| Start of `run_agent` | open the log, load the session, summarize if long | [`agent/loop.py`](agent/loop.py), [`agent/context.py`](agent/context.py) |
+| Top of each step | the step limit check | [`agent/loop.py`](agent/loop.py) |
+| Around the model call | retries and backoff, then token counting | [`agent/llm.py`](agent/llm.py), [`agent/loop.py`](agent/loop.py) |
+| Around every tool call | allowlist lookup and error catching (`execute`) | [`agent/tools.py`](agent/tools.py) |
+| Inside one specific tool | the Docker sandbox, used only by `run_python_code` | [`harness/sandbox.py`](harness/sandbox.py) |
+| End of each step | log the action, save the session | [`agent/loop.py`](agent/loop.py) |
+| End of the run | return a stats dict, close the log | [`agent/loop.py`](agent/loop.py) |
+| Outside the agent | evals call `run_agent` like a user would and score the results | [`evals/run_evals.py`](evals/run_evals.py) |
+
+### The rules that keep the integration clean
+
+These are design choices worth copying in your own projects:
+
+- **The loop stays small.** Each harness piece is one function call at a fixed point, not logic scattered through the loop. You can read `loop.py` top to bottom and follow the whole run.
+- **One gatekeeper for tools.** Every tool call goes through `execute()`. Safety and error handling live in one place, not in each tool.
+- **Tools raise, `execute()` catches.** A tool doesn't need to worry about being safe. If it fails, it raises, and the gatekeeper turns that into a message.
+- **The sandbox is just an implementation detail of one tool.** The loop has no idea Docker exists. `run_python_code` is a normal `@tool` function that happens to call the sandbox. That's why you can swap Docker for something else without touching the loop.
+- **Nothing outside `llm.py` knows about Groq.** Swap the provider by rewriting one file.
+- **Evals sit outside the agent.** They only call `run_agent` and read what comes back, so the agent never depends on its own tests.
+- **Failures become text.** Errors, timeouts and crashes are turned into messages instead of exceptions, so the model can often recover on its own.
+
+### Adding your own harness piece
+
+The question to ask first is: *where in the loop would this hook in?* The table above answers it. A few examples:
+
+| You want to add | Where it hooks in |
+|---|---|
+| a **token budget** | top of each step, next to the step limit: stop if total tokens pass a limit |
+| a **circuit breaker** | inside `execute()`: stop calling a tool that keeps failing |
+| **human approval** for risky tools | in the loop, just before `execute()` runs |
+| a **cost report** | end of the run, from the stats dict you already return |
+| **structured logs** | in `tracing.py`: write JSON lines instead of plain text |
+| a **new eval metric** | in `evals/run_evals.py`: extend the grader or the report |
+
+### What's not built yet
+
+To be upfront: the loop counts tokens but doesn't yet stop when a budget is exceeded, and there's no circuit breaker. Both are in [What to build next](#what-to-build-next), and both slot in exactly where the table above says.
 
 ---
 
@@ -286,6 +459,8 @@ So it runs in a **disposable Docker container**:
 2. Ask: `Use code to run an infinite loop: while True: pass`. It should be stopped after a few seconds.
 3. Run `docker ps -a`. Nothing from your tests should be left behind. That's the real proof cleanup works.
 
+**Want the full picture?** Skip ahead to [The sandbox in depth](#the-sandbox-in-depth) for a diagram, a step-by-step walkthrough, and a table of what happens when the model's code misbehaves.
+
 **What this is and isn't:** it's a one-shot calculator. Every call starts fresh and is thrown away, so nothing persists between calls. A "coding assistant" that builds and tests projects would need a persistent workspace, file tools, and tighter controls. See [What to build next](#what-to-build-next).
 
 ### Part 7: Testing it properly
@@ -335,6 +510,129 @@ Design choices in the runner:
 - **One crashing task doesn't stop the run.** It's recorded as a failure and the rest continue.
 - **The grader is simple on purpose:** does the expected text appear in the answer? It will sometimes be too strict. When a task fails, open its log before blaming the agent. It's always one of three things: the grader was too strict, the agent chose badly, or you found a real bug.
 - **It pauses between tasks** to stay under free-tier rate limits.
+
+---
+
+## The sandbox in depth
+
+This is the most interesting part of the harness, so it gets its own section. Read [`harness/sandbox.py`](harness/sandbox.py) alongside it.
+
+### Why it exists
+
+Every other tool in this repo runs code *you* wrote. You know exactly what `get_weather` does. `run_python_code` is different: it runs code the model wrote a few seconds ago, and you have no idea what it says until it arrives. It might be a tidy loop. It might be a bug that fills your disk, a script that reads your API keys, or something that hangs forever.
+
+You can't fix that by trusting the model more. You fix it by making sure the code runs somewhere it can't do any damage.
+
+### The picture
+
+Think of a disposable glass room. You slide a note (the code) through a slot, watch from outside, collect whatever gets printed, and then demolish the room. Nothing inside can reach your house. The next note gets a brand-new room.
+
+```mermaid
+sequenceDiagram
+    participant M as Model
+    participant A as Your agent (execute)
+    participant S as sandbox.py
+    participant D as Docker
+    participant C as Container
+    M->>A: asks for run_python_code(code)
+    A->>S: run_python_code(code)
+    S->>D: create a container (no network, memory capped)
+    D->>C: start it: python -c "code"
+    S->>D: wait, but only up to the timeout
+    C-->>D: prints output, exits
+    S->>D: read the output (raw bytes)
+    S->>D: remove the container
+    S-->>A: plain text: the output, or an error message
+    A-->>M: tool result
+```
+
+The model only ever produces the text of the code. Everything after that arrow is your program's decision.
+
+### What happens, step by step
+
+1. **The model asks.** It sends `run_python_code` with a `code` argument. That's just a string. Nothing has run.
+2. **`execute()` finds the tool** in the registry and calls the sandbox function.
+3. **Docker builds a fresh container** from the `python:3.11-slim` image (a tiny Linux system with Python), with the network switched off and a memory limit set.
+4. **The only thing that runs inside** is `python -c "<the model's code>"`. Your program isn't blocked; it starts the container in the background and watches the clock.
+5. **Finished in time?** Your program reads what the code printed and checks the exit code. `0` means success. Anything else means the script itself crashed, and that becomes an error message.
+6. **Too slow?** Your program kills the container itself. The container has no idea a timer exists, so the outside has to enforce it.
+7. **Cleanup always happens.** The container is removed whether the code worked, crashed or timed out.
+8. **The result goes back as text**, and the model reads it and carries on.
+
+### What's inside the box, and what isn't
+
+| Inside the container | Not inside the container |
+|---|---|
+| Python 3.11 and its standard library | your project files (`tools.py`, `loop.py`, ...) |
+| the one script the model wrote | your API keys and environment variables |
+| a small memory allowance | your other files and folders |
+| its own empty, temporary filesystem | the internet and your local network |
+| | packages like `requests` |
+| | your agent's conversation |
+
+### The guardrails
+
+| Guardrail | What it protects you from | How it works |
+|---|---|---|
+| Fresh container every call | leftovers from one run affecting the next | the container is removed after each call |
+| No network | code sending data out or downloading things | networking is disabled when the container is created |
+| Memory cap | a script eating all your RAM | the Linux kernel kills anything over the limit |
+| Timeout | infinite loops and hangs | your program waits with a deadline, then kills the container |
+| Cleanup in `finally` | dead containers piling up | cleanup runs on success, crash and timeout alike |
+| Errors become text | a bad script crashing your agent | crashes and timeouts turn into messages the model can read |
+
+The memory limit and the timeout are defaults in the file. Both are easy to change.
+
+### What happens when the model's code misbehaves
+
+| The code tries to... | What actually happens |
+|---|---|
+| loop forever | the timeout fires, the container is killed, the model gets a "took too long" message |
+| divide by zero or hit any other error | the script crashes, the exit code is non-zero, the model gets an error message with the output |
+| read your `.env` or your project files | they don't exist in there, so it fails |
+| print environment variables | it sees the container's own, and your keys aren't among them |
+| call a web API | there's no network, so it fails |
+| `import requests` | `ModuleNotFoundError`, since only the standard library is installed |
+| delete files | it can only touch the throwaway container's own files, which are destroyed anyway |
+| use huge amounts of memory | the kernel kills it once it passes the limit |
+
+### Why the output comes back as bytes
+
+Anything that crosses a boundary between your program and something else (a container, a network socket, a file) travels as raw bytes. The Docker library gives you exactly that, so the code decodes it into text (UTF-8) and strips the trailing newline that `print()` adds. If you've ever wondered why a `b'2\n'` shows up, that's why.
+
+### Try it yourself
+
+1. Ask: `Use code to find the 20th Fibonacci number`. You should get 6765.
+2. **Watch the box appear.** Keep a second terminal open and run `docker ps` a few times while the agent works on: `Use code to run: import time; time.sleep(4); print("done")`. You'll see a container show up and then vanish.
+3. Trigger the timeout: `Use code to run an infinite loop: while True: pass`.
+4. Trigger a crash: `Use code to run 1/0`.
+5. **Try to peek out.** Ask: `Use code to print all environment variables`. You'll see the container's environment, not yours.
+6. Run `docker ps -a`. It should be empty of your test containers. That's the proof cleanup works.
+
+### Honest limits
+
+- **It's a one-shot tool.** Every call starts from nothing, and nothing survives. The model can't save a file and use it in the next call, and it can't install packages.
+- **Only memory and time are capped.** There's no CPU cap, no limit on how many processes it can start, and the filesystem isn't read-only. The timeout is what stops a script that spins.
+- **Docker isn't a perfect wall.** Containers share the host's kernel. That's plenty for a learning project running your own agent, but it's not what you'd rely on for hostile code at scale.
+- **Docker has to be running.** If it isn't, the tool returns an error message, and everything else in the agent keeps working.
+
+### How real agent platforms go further
+
+The idea is the same, with more layers:
+
+- **Warm pools:** containers are started ahead of time so there's no wait
+- **MicroVMs and gVisor:** stronger isolation than a plain container (Firecracker is a well-known example)
+- **Syscall filtering (seccomp):** blocking dangerous system calls at a lower level
+- **Files in and out:** so the code can produce a chart or a CSV and hand it back
+- **Live resource watching:** killing runaway code early instead of waiting for the full timeout
+- **Never reusing a sandbox** across two different runs of untrusted code
+
+### Ideas to extend it
+
+- Add a CPU limit, a process limit and a read-only filesystem
+- Mount a workspace folder so the agent can write files and iterate, which is the step from "calculator" to "coding assistant"
+- Let it use a short list of approved packages
+- Start containers in advance so calls feel instant
 
 ---
 
@@ -398,6 +696,8 @@ Keep your own results table:
 | **Token** | a chunk of text; model cost and limits are counted in tokens |
 | **Context window** | the most text a model can take in one request |
 | **Sandbox** | an isolated place to run code you don't trust |
+| **Container** | a lightweight isolated process that acts like its own small computer |
+| **Image** | the ready-made snapshot a container starts from (here, `python:3.11-slim`) |
 | **Eval** | an automated test: tasks, expected answers, and a grader |
 
 ---
@@ -427,6 +727,14 @@ Keep your own results table:
 - [pguso/agents-from-scratch](https://github.com/pguso/agents-from-scratch): a lesson-by-lesson build with evals and telemetry
 
 ---
+
+## Credits
+
+**Built by [Sanjii](https://github.com/sxnjai23)** · [LinkedIn](https://in.linkedin.com/in/sanjai-jayabal)
+
+**Built with:** Python, the [Groq](https://groq.com) API, the [OpenWeatherMap](https://openweathermap.org) API and [Docker](https://www.docker.com).
+
+**Inspired by:** the small agent codebases listed under [What to build next](#what-to-build-next): mini-swe-agent, mini_agent and agents-from-scratch. They're worth reading once you've built your own.
 
 ## Contributing
 
