@@ -61,8 +61,8 @@ def execute(name: str, args: dict) -> str:
 
 @tool
 def mathematic_operations(a: float, b: float, operation: str) -> float:
-    """Perform a math operation on two numbers. operation must be one of:
-    'add', 'sub', 'multiply', 'divide'."""
+    """Perform a math operation as two numbers even if its contains multiple numbers. operation must be one of:
+    'add', 'sub', 'multiply', 'divide','exponentiate', 'mod', 'floor_divide', 'max', 'min', 'average'"""
     if operation == "add":
         return a + b
     elif operation == "sub":
@@ -71,6 +71,18 @@ def mathematic_operations(a: float, b: float, operation: str) -> float:
         return a * b
     elif operation == "divide":
         return a / b
+    elif operation == "exponentiate":
+        return a ** b
+    elif operation == "mod":
+        return a % b 
+    elif operation == "floor_divide":
+        return a // b 
+    elif operation == "max":
+        return max(a, b)
+    elif operation == "min":
+        return min(a, b)
+    elif operation == "average":
+        return (a + b) / 2  
     else:
         raise ValueError(f"unknown operation '{operation}'")
 

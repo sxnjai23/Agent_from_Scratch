@@ -19,7 +19,7 @@ def grade(answer, expected):
 
 
 def main():
-    with open("evals/tasks.json") as f:
+    with open("evals/tasks2.json") as f:
         tasks = json.load(f)
 
     llm = LLMClient()
@@ -61,4 +61,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    for i in range(10):
+        main()
