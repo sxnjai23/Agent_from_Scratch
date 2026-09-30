@@ -91,8 +91,8 @@ def mathematic_operations(a: float, b: float, operation: str) -> float:
 def get_weather(city: str) -> str:
     """Get the current weather for a city."""
     api_key = os.environ.get("WEATHER_API_KEY")
-    response = requests.get(
-        "https://api.openweathermap.org/data/2.5/weather",
+    weather_url = os.environ.get("WEATHER_URL")
+    response = requests.get(weather_url,
         params={"q": city, "appid": api_key, "units": "metric"},
         timeout=10,
     )

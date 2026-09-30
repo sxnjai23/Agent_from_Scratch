@@ -3,3 +3,6 @@
 __pycache__
 logger.jsonl
 /harness/rand.py
+web_new.py
+/static
+TUTORIAL.md

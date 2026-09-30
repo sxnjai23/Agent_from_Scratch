@@ -6,6 +6,7 @@
 
 import json
 import os
+from pyexpat import model
 import time
 from dataclasses import dataclass, field
 from groq import Groq
@@ -52,8 +53,8 @@ GROQ_API = os.environ["GROQ_API_KEY"]
 
 
 class LLMClient:
-    def __init__(self):
-        self.model = "openai/gpt-oss-20b"
+    def __init__(self , model: str = "openai/gpt-oss-20b"):
+        self.model = model
         self.client = Groq(api_key = GROQ_API)
 
     def call(self, messages: list[dict], tools: list[dict] | None = None , max_retries = 3) -> LLMResponse:

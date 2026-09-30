@@ -22,11 +22,11 @@ def run_agent(task, llm, max_steps=10,session_id = "test-01", run_id="logger"):
     messages = load_session(session_id)
     if messages is None:
         content = """ You are a helpful agent. For every arithmetic operation, no matter how
-    simple, call mathematic_operations — never compute arithmetic yourself, not even one 
+    simple, call mathematic_operations — never compute arithmetic yourself, not even one
     step. If a task needs several operations, call the tool once per operation, using the
     result of one call as the input to the next. Only give a final answer once every operation
     has gone through a tool."""
-        
+
         messages = [{"role": "system", "content": content},]
         tracer.log(f"New session: {run_id}")
     else:
@@ -104,6 +104,7 @@ def run_agent(task, llm, max_steps=10,session_id = "test-01", run_id="logger"):
     For loacl testing the file you can uncomment the
     below code and run it on your local machine and test it.
 
+"""
 
 # if __name__ == "__main__":
 #     llm = LLMClient()
@@ -113,5 +114,3 @@ def run_agent(task, llm, max_steps=10,session_id = "test-01", run_id="logger"):
 #             break
 #         result = run_agent(task=task, llm=llm, session_id = "test-01", max_steps=10, run_id="logger")
 #         print(result["answer"])
-
-"""

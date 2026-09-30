@@ -3,13 +3,12 @@ Tracing.py -> used to trace the agent and log the messages in a file.
 It creates a new file for each run and logs the messages in JSONL format.
 
 """
-
-
 import json
 
 
 class Tracer():
     def __init__(self, run_id):
+        self.run_id = run_id
         self.file = open(f"{run_id}.jsonl", "a")
 
     def log(self, data: dict):
